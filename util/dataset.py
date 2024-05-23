@@ -23,7 +23,7 @@ class CustomDataset(Dataset):
         self.split_list=[]
         for image_name in split_list_all:
             if data_angle_type == 2 or \
-                (data_angle_type ==1 == self.data_dict[image_name]['angleType']) :
+                (data_angle_type == self.data_dict[image_name]['angleType']) :
                     self.split_list.append(image_name)
         self.preprocess=transforms.Compose([
             transforms.Resize((resize,resize))

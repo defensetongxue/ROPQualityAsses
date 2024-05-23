@@ -30,7 +30,7 @@ class Metrics:
         return (f"[{self.header}] "
                 f"Acc: {self.accuracy:.4f}, Auc: {self.auc:.4f}, Recall: {recall_str}")
 
-    def _store(self, key, split_name, save_epoch, param, save_path='./record.json'):
+    def _store(self, save_epoch, param, save_path='./record.json'):
         res = {
             "accuracy": round(self.accuracy, 4),
             "auc": round(self.auc, 4),

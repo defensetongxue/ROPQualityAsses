@@ -71,8 +71,11 @@ if args.configs['model']['name']=='inceptionv3':
     criterion= incetionV3_loss(args.smoothing)
 # init metic
 metirc= Metrics("Main")
-print("There is {} batch size".format(args.configs["train"]['batch_size']))
-print(f"Train: {len(train_loader)}, Val: {len(val_loader)}")
+print("batch size: {} batch size".format(args.configs["train"]['batch_size']))
+print(f"Train: {len(train_dataset)} images in {len(train_loader)} batches")
+print(f"Val: {len(val_dataset)} images in {len(val_loader)} batches")
+print(f"Test: {len(test_dataset)} images in {len(test_loader)} batches")
+
 
 early_stop_counter = 0
 best_val_loss = float('inf')
@@ -114,8 +117,10 @@ param={
     "model":args.configs["model"]["name"],
     "resolution": args.resize,
     "smoothing":args.smoothing,
+    "split_name":args.split_name,
+    "angle_type":args.angle_type,
     "optimizer":args.configs["lr_strategy"],
     "weight_decay":args.configs["train"]["wd"],
     "save_epoch":saved_epoch
 }
-metirc._store(args.split_name,saved_epoch,param)
+metirc._store(saved_epoch,param)
