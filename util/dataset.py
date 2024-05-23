@@ -14,10 +14,6 @@ class CustomDataset(Dataset):
         '''
         as the retfound model is pretrained in the image_net norm(mean,std),
         we keep the mean and std for this method, but for the other model, 
-        we use the std,mean cal by 20 images of custom dataset
-        angle type 0 houji
-                   1 waizhou
-                   2 both
         '''
         with open(os.path.join(data_path,'split',f'{split_name}.json'), 'r') as f:
            split_list_all=json.load(f)[split]
@@ -44,7 +40,7 @@ class CustomDataset(Dataset):
             transforms.Normalize(
                 mean=IMAGENET_DEFAULT_MEAN,
                 std=IMAGENET_DEFAULT_STD)])
-            
+        
     def __getitem__(self, idx):
         image_name = self.split_list[idx]
         data=self.data_dict[image_name]
@@ -55,8 +51,8 @@ class CustomDataset(Dataset):
             
         img=self.img_transforms(img)
         
-        
-        return img,data[image_name]['qualityLevel'],image_name
+        label = data['qualityLevel']
+        return img,label,image_name
 
 
     def __len__(self):

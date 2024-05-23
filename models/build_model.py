@@ -9,14 +9,14 @@ class incetionV3_loss(nn.Module):
             self.loss_cls=LabelSmoothingCrossEntropy(smoothing)
             self.loss_avg=LabelSmoothingCrossEntropy(smoothing)
         else:
-            self.loss_cls=nn.CrossEntropyLoss()
-            self.loss_avg=nn.CrossEntropyLoss()
+            self.loss_cls=nn.MSELoss()
+            self.loss_avg=nn.MSELoss()
     def forward(self,inputs,target):
         if isinstance(inputs,tuple):
             out,avg=inputs
-            return self.loss_cls(out,target)+self.loss_avg(avg,target)
+            return self.loss_cls(out.squeeze(),target)+self.loss_avg(avg.squeeze(),target)
         return self.loss_cls(inputs,target)
-def build_model(configs):
+def build_model(configs,num_classes):
     
-    model= getattr(meta_model,f"build_{configs['name']}")(configs)
+    model= getattr(meta_model,f"build_{configs['name']}")(configs,num_classes=num_classes)
     return model

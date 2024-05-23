@@ -5,7 +5,7 @@
     "model":{
         "name":"efficientnet_b7",
         "official_model_save":"./experiments",
-        "num_classes":4
+        "num_classes":3
     },
     "lr_strategy":{
         "warmup_epochs":10,

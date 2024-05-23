@@ -18,7 +18,7 @@ args = get_config()
 os.makedirs(args.save_dir,exist_ok=True)
 print("Saveing the model in {}".format(args.save_dir))
 # Create the model and criterion
-model= build_model(args.configs["model"])# as we are loading the exite
+model= build_model(args.configs["model"],num_classes=3)# as we are loading the exite
 
 
 # Set up the device
@@ -61,15 +61,16 @@ if args.smoothing> 0.:
     criterion =LabelSmoothingCrossEntropy(args.smoothing)
     print("Using tmii official optimizier")
 else:
-    from models.losses import AdaptiveCrossEntropyLoss
-    criterion = AdaptiveCrossEntropyLoss(train_dataset+val_dataset,device)
+    from torch.nn import CrossEntropyLoss,MSELoss
+    criterion = CrossEntropyLoss()
+    # criterion = MSELoss()
 if args.configs['model']['name']=='inceptionv3':
     from models import incetionV3_loss
     assert args.resize>=299, "for the model inceptionv3, you should set resolusion at least 299 but now "
-    
+    print('using inception loss')
     criterion= incetionV3_loss(args.smoothing)
 # init metic
-metirc= Metrics(val_dataset,"Main")
+metirc= Metrics("Main")
 print("There is {} batch size".format(args.configs["train"]['batch_size']))
 print(f"Train: {len(train_loader)}, Val: {len(val_loader)}")
 
@@ -77,7 +78,7 @@ early_stop_counter = 0
 best_val_loss = float('inf')
 best_auc=0
 total_epoches=args.configs['train']['end_epoch']
-save_model_name=f"{args.split_name}_{str(args.angleType)}_{args.configs['save_name']}"
+save_model_name=f"{args.split_name}_{str(args.angle_type)}_{args.configs['save_name']}"
 saved_epoch=-1
 # Training and validation loop
 for epoch in range(last_epoch,total_epoches):
@@ -103,7 +104,7 @@ for epoch in range(last_epoch,total_epoches):
 
 
 # Load the best model and evaluate
-metirc=Metrics(test_dataset,"Main")
+metirc=Metrics("Main")
 model.load_state_dict(
         torch.load(os.path.join(args.save_dir, save_model_name)))
 val_loss, metirc=val_epoch(model, test_loader, criterion, device,metirc)
@@ -117,5 +118,4 @@ param={
     "weight_decay":args.configs["train"]["wd"],
     "save_epoch":saved_epoch
 }
-key=f"{args.configs['model']['name']}_{str(args.resize)}_{args.norm_method}_{str(args.smoothing)}_{str(args.configs['lr_strategy']['lr'])}_{str(args.configs['train']['wd'])}"
-metirc._store(key,args.split_name,saved_epoch,param)
+metirc._store(args.split_name,saved_epoch,param)

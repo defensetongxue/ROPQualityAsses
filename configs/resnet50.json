@@ -5,7 +5,7 @@
     "model":{
         "name":"resnet50",
         "official_model_save":"./experiments",
-        "num_classes":2
+        "num_classes":3
     },
     "lr_strategy":{
         "warmup_epochs":10,

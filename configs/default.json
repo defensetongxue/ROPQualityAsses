@@ -4,7 +4,7 @@
     "norm_method":"imagenet",
     "model":{
         "name":"vit",
-        "num_classes":2,
+        "num_classes":3,
         "drop_path":0.2,
         "global_pool":false,
         "pretrained":"../ROP_diagnoise/pretrained/RETFound_cfp_weights.pth"
