@@ -6,6 +6,7 @@ import os,json
 import numpy as np
 from util.metric import Metrics
 from util.functions import get_optimizer,to_device
+from util.tools import visual
 from configs import get_config
 # Initialize the folder
 os.makedirs("checkpoints",exist_ok=True)
@@ -18,7 +19,7 @@ args = get_config()
 os.makedirs(args.save_dir,exist_ok=True)
 print("Saveing the model in {}".format(args.save_dir))
 # Create the model and criterion
-model= build_model(args.configs["model"],num_classes=3)# as we are loading the exite
+model= build_model(args.configs["model"],num_classes=1)# as we are loading the exite
 
 # Set up the device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -50,20 +51,39 @@ model.eval()
 all_predictions = []
 all_targets = []
 all_probs = []
+
+os.makedirs(f'./experiments/error/{args.angle_type}',exist_ok=True)
+with open(os.path.join(args.data_path,'annotations.json')) as f:
+    data_dict=json.load(f)
 with torch.no_grad():
     for inputs, targets, image_names in test_loader:
         inputs = to_device(inputs,device)
         targets = to_device(targets,device)
         outputs = model(inputs)
-        probs = torch.softmax(outputs.cpu(), dim=1).numpy()
-        predictions = np.argmax(probs, axis=1)
-       
+        probs = outputs.cpu().numpy().squeeze()
+            
+        # 根据0.67和1.33作为阈值选择类标签
+        predictions = []
+        for prob in probs:
+            if prob < 0.67:
+                predictions.append(0)
+            elif prob < 1.33:
+                predictions.append(1)
+            else:
+                predictions.append(2)
+        predictions = np.array(predictions)
+        for score, pred, label, image_name in zip(probs, predictions, targets.cpu().numpy(), image_names):
+            score=min(2,max(score,0))
+            if pred != label:
+                visual(image_path=data_dict[image_name]['image_path'], label=label, score=score, save_path=f'./experiments/error/{args.angle_type}/{image_name}', font_path='./arial.ttf', font_size=50)
+            
         all_predictions.extend(predictions)
-        all_targets.extend(targets.cpu().numpy())
+        all_targets.extend(targets.cpu().numpy().squeeze())
         all_probs.extend(probs)
+                
         
 all_predictions = np.array(all_predictions)
 all_targets = np.array(all_targets)
 all_probs = np.vstack(all_probs)
 
-metirc.update(all_predictions,all_probs,all_targets)
+metirc.update(all_predictions,all_targets)

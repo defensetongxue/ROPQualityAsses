@@ -5,12 +5,8 @@ from timm.loss import LabelSmoothingCrossEntropy
 class incetionV3_loss(nn.Module):
     def __init__(self,smoothing):
         super().__init__()
-        if smoothing>0:
-            self.loss_cls=LabelSmoothingCrossEntropy(smoothing)
-            self.loss_avg=LabelSmoothingCrossEntropy(smoothing)
-        else:
-            self.loss_cls=nn.MSELoss()
-            self.loss_avg=nn.MSELoss()
+        self.loss_cls=nn.MSELoss()
+        self.loss_avg=nn.MSELoss()
     def forward(self,inputs,target):
         if isinstance(inputs,tuple):
             out,avg=inputs

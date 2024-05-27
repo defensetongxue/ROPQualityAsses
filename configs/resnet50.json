@@ -12,10 +12,10 @@
         "lr":5e-4,
         "min_lr":1e-6,
         "epochs":100,
-        "batch_size":16
+        "batch_size":64
     },
     "train": {
-        "batch_size":16,
+        "batch_size":64,
         "begin_epoch": 0,
         "end_epoch": 100,
         "early_stop": 30,

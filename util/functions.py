@@ -14,20 +14,22 @@ def to_device(x, device):
     else:
         return x.to(device)
 
-def train_epoch(model, optimizer, train_loader, loss_function, device,lr_scheduler,epoch):
+def train_epoch(model, optimizer, train_loader, loss_function, device, lr_scheduler, epoch):
     model.train()
     running_loss = 0.0
-    batch_length=len(train_loader)
-    for data_iter_step,(inputs, targets, meta) in enumerate(train_loader):
-        # Moving inputs and targets to the correct device
-        lr_scheduler.adjust_learning_rate(optimizer,epoch+(data_iter_step/batch_length))
+    batch_length = len(train_loader)
+    for data_iter_step, (inputs, targets, meta) in enumerate(train_loader):
+        lr_scheduler.adjust_learning_rate(optimizer, epoch + (data_iter_step / batch_length))
         inputs = to_device(inputs, device)
-        targets = to_device(targets, device)
+        targets = to_device(targets, device).float()
 
         optimizer.zero_grad()
 
         # Assuming your model returns a tuple of outputs
         outputs = model(inputs)
+
+        # Ensure targets have the same shape as outputs
+        targets = targets.view_as(outputs)
 
         # Assuming your loss function can handle tuples of outputs and targets
         loss = loss_function(outputs, targets)
@@ -40,8 +42,8 @@ def train_epoch(model, optimizer, train_loader, loss_function, device,lr_schedul
     return running_loss / len(train_loader)
 
 
-def val_epoch(model, val_loader, loss_function, device,metirc:Metrics):
-    loss_function=nn.CrossEntropyLoss()
+def val_epoch(model, val_loader, loss_function, device, metric):
+    loss_function = nn.MSELoss()  # 对于回归问题，使用MSE损失
     model.eval()
     running_loss = 0.0
     all_predictions = []
@@ -49,25 +51,44 @@ def val_epoch(model, val_loader, loss_function, device,metirc:Metrics):
     all_probs = []
     with torch.no_grad():
         for inputs, targets, _ in val_loader:
-            inputs = to_device(inputs,device)
-            targets = to_device(targets,device)
+            inputs = to_device(inputs, device)
+            targets = to_device(targets, device).float()  # 确保目标为浮点类型
             outputs = model(inputs)
+            
+            # If using InceptionV3, the model returns a tuple (aux_output, main_output)
+            if isinstance(outputs, tuple):
+                outputs = outputs[0]  # Use main output
+
+            # Ensure targets have the same shape as outputs
+            targets = targets.view_as(outputs)
+
             loss = loss_function(outputs, targets)
             running_loss += loss.item()
-            probs = torch.softmax(outputs.cpu(), dim=1).numpy()
-            predictions = np.argmax(probs, axis=1)
-           
+            probs = outputs.cpu().numpy().squeeze()
+            
+           # 根据0.67和1.33作为阈值选择类标签
+            predictions = []
+            for prob in probs:
+                if prob < 0.67:
+                    predictions.append(0)
+                elif prob < 1.33:
+                    predictions.append(1)
+                else:
+                    predictions.append(2)
+            predictions = np.array(predictions)
 
             all_predictions.extend(predictions)
-            all_targets.extend(targets.cpu().numpy())
+            all_targets.extend(targets.cpu().numpy().squeeze())
             all_probs.extend(probs)
             
     all_predictions = np.array(all_predictions)
     all_targets = np.array(all_targets)
-    all_probs = np.vstack(all_probs)
-    # print(all_predictions.shape,all_probs.shape,)
-    metirc.update(all_predictions,all_probs,all_targets)
-    return running_loss / len(val_loader), metirc
+    all_probs = np.array(all_probs)
+    
+    metric.update(all_probs, all_targets)
+    return running_loss / len(val_loader), metric
+
+
 def get_instance(module, class_name, *args, **kwargs):
     cls = getattr(module, class_name)
     instance = cls(*args, **kwargs)

@@ -18,7 +18,7 @@ args = get_config()
 os.makedirs(args.save_dir,exist_ok=True)
 print("Saveing the model in {}".format(args.save_dir))
 # Create the model and criterion
-model= build_model(args.configs["model"],num_classes=3)# as we are loading the exite
+model= build_model(args.configs["model"],num_classes=1)# as we are loading the exite
 
 
 # Set up the device
@@ -56,14 +56,10 @@ test_loader=  DataLoader(test_dataset,
                         batch_size=args.configs['train']['batch_size'],
                         shuffle=False, num_workers=args.configs['num_works'])
 
-if args.smoothing> 0.:
-    from timm.loss import LabelSmoothingCrossEntropy
-    criterion =LabelSmoothingCrossEntropy(args.smoothing)
-    print("Using tmii official optimizier")
-else:
-    from torch.nn import CrossEntropyLoss,MSELoss
-    criterion = CrossEntropyLoss()
-    # criterion = MSELoss()
+
+from torch.nn import CrossEntropyLoss,MSELoss
+# criterion = CrossEntropyLoss()
+criterion = MSELoss()
 if args.configs['model']['name']=='inceptionv3':
     from models import incetionV3_loss
     assert args.resize>=299, "for the model inceptionv3, you should set resolusion at least 299 but now "
@@ -79,7 +75,7 @@ print(f"Test: {len(test_dataset)} images in {len(test_loader)} batches")
 
 early_stop_counter = 0
 best_val_loss = float('inf')
-best_auc=0
+best_acc=0
 total_epoches=args.configs['train']['end_epoch']
 save_model_name=f"{args.split_name}_{str(args.angle_type)}_{args.configs['save_name']}"
 saved_epoch=-1
@@ -92,8 +88,8 @@ for epoch in range(last_epoch,total_epoches):
       f"Train Loss: {train_loss:.6f}, Val Loss: {val_loss:.6f}, "
       )
     print(metirc)
-    if metirc.auc >best_auc:
-        best_auc= metirc.auc
+    if metirc.accuracy>best_acc:
+        best_acc= metirc.accuracy
         saved_epoch=epoch
         early_stop_counter = 0
         torch.save(model.state_dict(),
