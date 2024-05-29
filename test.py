@@ -60,7 +60,7 @@ with torch.no_grad():
         inputs = to_device(inputs,device)
         targets = to_device(targets,device)
         outputs = model(inputs)
-        probs = outputs.cpu().numpy().squeeze()
+        probs = outputs.cpu().numpy().squeeze(1)
             
         # 根据0.67和1.33作为阈值选择类标签
         predictions = []
@@ -77,13 +77,13 @@ with torch.no_grad():
             if pred != label:
                 visual(image_path=data_dict[image_name]['image_path'], label=label, score=score, save_path=f'./experiments/error/{args.angle_type}/{image_name}', font_path='./arial.ttf', font_size=50)
             
-        all_predictions.extend(predictions)
-        all_targets.extend(targets.cpu().numpy().squeeze())
-        all_probs.extend(probs)
+#         all_predictions.extend(predictions)
+#         all_targets.extend(targets.cpu().numpy().squeeze(1))
+#         all_probs.extend(probs)
                 
         
-all_predictions = np.array(all_predictions)
-all_targets = np.array(all_targets)
-all_probs = np.vstack(all_probs)
+# all_predictions = np.array(all_predictions)
+# all_targets = np.array(all_targets)
+# all_probs = np.vstack(all_probs)
 
-metirc.update(all_predictions,all_targets)
+# metirc.update(all_predictions,all_targets)

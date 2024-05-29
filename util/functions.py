@@ -64,22 +64,25 @@ def val_epoch(model, val_loader, loss_function, device, metric):
 
             loss = loss_function(outputs, targets)
             running_loss += loss.item()
-            probs = outputs.cpu().numpy().squeeze()
-            
-           # 根据0.67和1.33作为阈值选择类标签
+            probs = outputs.cpu().numpy().squeeze(1)
             predictions = []
-            for prob in probs:
-                if prob < 0.67:
-                    predictions.append(0)
-                elif prob < 1.33:
-                    predictions.append(1)
-                else:
-                    predictions.append(2)
-            predictions = np.array(predictions)
+           # 根据0.67和1.33作为阈值选择类标签
+            try:
+                for prob in probs:
+                    if prob < 0.67:
+                        predictions.append(0)
+                    elif prob < 1.33:
+                        predictions.append(1)
+                    else:
+                        predictions.append(2)
+                predictions = np.array(predictions)
 
-            all_predictions.extend(predictions)
-            all_targets.extend(targets.cpu().numpy().squeeze())
-            all_probs.extend(probs)
+                all_predictions.extend(predictions)
+                all_targets.extend(targets.cpu().numpy().squeeze(1))
+                all_probs.extend(probs)
+            except:
+                print(probs)
+                raise
             
     all_predictions = np.array(all_predictions)
     all_targets = np.array(all_targets)

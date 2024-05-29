@@ -43,16 +43,15 @@ class Metrics:
     def _store(self, save_epoch, param, save_path='./record.json'):
         def handle_nan(value):
             return 0.0 if np.isnan(value) else value
-
         res = {
-            "accuracy": round(handle_nan(self.accuracy), 4),
-            "mse": round(handle_nan(self.mse), 4),
-            "mae": round(handle_nan(self.mae), 4),
-            "r2": round(handle_nan(self.r2), 4),
-            "recall": [handle_nan(recall) for recall in self.recall],
+            "accuracy": float(round(handle_nan(self.accuracy), 4)),
+            "mse": float(round(handle_nan(self.mse), 4)),
+            "mae": float(round(handle_nan(self.mae), 4)),
+            "r2": float(round(handle_nan(self.r2), 4)),
+            "recall": [float(handle_nan(recall)) for recall in self.recall],
             "save_epoch": save_epoch
         }
-
+        print(res)
         # Check if the file exists and load its content if it does
         if os.path.exists(save_path):
             with open(save_path, 'r') as file:
@@ -69,5 +68,4 @@ class Metrics:
         # Save the updated data back to the file
         with open(save_path, 'w') as file:
             json.dump(existing_data, file, indent=4)
-
             
