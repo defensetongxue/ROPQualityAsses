@@ -4,3 +4,4 @@ nohup.out
 experiments
 ring.py
 tmp.py
+*.json

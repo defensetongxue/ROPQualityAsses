@@ -5,7 +5,8 @@ from  models import build_model
 import os,json
 import numpy as np
 from util.metric import Metrics
-from util.functions import get_optimizer,to_device
+from util.functions import to_device
+from util.tools import visual
 from configs import get_config
 # Initialize the folder
 os.makedirs("checkpoints",exist_ok=True)
@@ -50,6 +51,11 @@ model.eval()
 all_predictions = []
 all_targets = []
 all_probs = []
+
+os.makedirs(f'./experiments/error/{args.angle_type}',exist_ok=True)
+with open(os.path.join(args.data_path,'annotations.json')) as f:
+    data_dict=json.load(f)
+    
 with torch.no_grad():
     for inputs, targets, image_names in test_loader:
         inputs = to_device(inputs,device)
@@ -57,13 +63,8 @@ with torch.no_grad():
         outputs = model(inputs)
         probs = torch.softmax(outputs.cpu(), dim=1).numpy()
         predictions = np.argmax(probs, axis=1)
-       
-        all_predictions.extend(predictions)
-        all_targets.extend(targets.cpu().numpy())
-        all_probs.extend(probs)
-        
-all_predictions = np.array(all_predictions)
-all_targets = np.array(all_targets)
-all_probs = np.vstack(all_probs)
-
-metirc.update(all_predictions,all_probs,all_targets)
+           
+        for pred, label, image_name in zip(predictions, targets.cpu().numpy(), image_names):
+            if pred != label:
+                visual(image_path=data_dict[image_name]['image_path'], label=label, score=pred, save_path=f'./experiments/error/{args.angle_type}/{image_name}', font_path='./arial.ttf', font_size=50)
+            
