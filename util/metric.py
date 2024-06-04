@@ -17,11 +17,22 @@ class Metrics:
         self.mse = 0
         self.mae = 0
         self.r2 = 0
-
+    def get_pred_label(self,predictions_probs):
+        predictions=[]
+        for prob in predictions_probs:
+            if prob < 0.67:
+                predictions.append(0)
+            elif prob < 1.33:
+                predictions.append(1)
+            else:
+                predictions.append(2)
+        return predictions
+    def get_onehot_encoder(self,predictions):
+        return np.eye(2)[predictions]
     def update(self, predictions, targets):
         # 将回归值四舍五入到最近的标签
-        rounded_predictions = np.round(predictions).astype(int)
-        rounded_predictions = np.clip(rounded_predictions, 0, 2)  # 确保值在0到2之间
+        rounded_predictions = self.get_pred_label(predictions)
+        # rounded_predictions = np.clip(rounded_predictions, 0, 2)
 
         self.accuracy = accuracy_score(targets, rounded_predictions)
         self.mse = mean_squared_error(targets, predictions)
