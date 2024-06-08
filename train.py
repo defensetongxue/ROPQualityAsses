@@ -18,7 +18,7 @@ args = get_config()
 os.makedirs(args.save_dir,exist_ok=True)
 print("Saveing the model in {}".format(args.save_dir))
 # Create the model and criterion
-model= build_model(args.configs["model"],num_classes=3)# as we are loading the exite
+model= build_model(args.configs["model"],num_classes=2)# as we are loading the exite
 
 
 # Set up the device

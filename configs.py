@@ -10,7 +10,7 @@ def get_config():
                         help='which split to use.')
     parser.add_argument('--angle_type', type=int, default=0,
                         help='which split to use.')
-    parser.add_argument('--resize', type=int, default=299,
+    parser.add_argument('--resize', type=int, default=224,
                         help='which split to use.')
     parser.add_argument('--smoothing', type=float, default=0.1,
                         help='which split to use.')
@@ -23,7 +23,7 @@ def get_config():
     
     # config file 
     parser.add_argument('--cfg', help='experiment configuration filename',
-                        default="./configs/resnet50.json", type=str)
+                        default="./configs/default.json", type=str)
     
     args = parser.parse_args()
     # Merge args and config file 

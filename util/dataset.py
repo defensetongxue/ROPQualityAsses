@@ -51,7 +51,11 @@ class CustomDataset(Dataset):
             
         img=self.img_transforms(img)
         
-        label = data['qualityLevel']
+        # label = data['qualityLevel']
+        if data['qualityLevel']>0:
+            label=1
+        else:
+            label=0
         return img,label,image_name
 
 

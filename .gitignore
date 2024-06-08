@@ -5,3 +5,4 @@ experiments
 ring.py
 tmp.py
 *.json
+pretrained

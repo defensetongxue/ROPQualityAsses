@@ -7,7 +7,7 @@
         "num_classes":3,
         "drop_path":0.2,
         "global_pool":false,
-        "pretrained":"../ROP_diagnoise/pretrained/RETFound_cfp_weights.pth"
+        "pretrained":"./pretrained/RETFound_cfp_weights.pth"
     },
     "lr_strategy":{
         "warmup_epochs":10,
