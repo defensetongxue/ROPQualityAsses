@@ -8,11 +8,11 @@ def get_config():
     # split
     parser.add_argument('--split_name', type=str, default='1',
                         help='which split to use.')
-    parser.add_argument('--angle_type', type=int, default=1,
+    parser.add_argument('--angle_type', type=int, default=0,
                         help='which split to use.')
     parser.add_argument('--resize', type=int, default=299,
                         help='which split to use.')
-    parser.add_argument('--smoothing', type=float, default=0.0,
+    parser.add_argument('--smoothing', type=float, default=0.1,
                         help='which split to use.')
     # Model
     # train and test
