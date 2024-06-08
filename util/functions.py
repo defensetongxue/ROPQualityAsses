@@ -81,7 +81,7 @@ def get_optimizer(cfg, model):
     if cfg['train']['optimizer'] == 'sgd':
         optimizer = optim.SGD(
             filter(lambda p: p.requires_grad, model.parameters()),
-            lr=cfg['train']['lr'],
+            lr=1e-3,
             momentum=cfg['train']['momentum'],
             weight_decay=cfg['train']['wd'],
             nesterov=cfg['train']['nesterov']
@@ -89,12 +89,12 @@ def get_optimizer(cfg, model):
     elif cfg['train']['optimizer'] == 'adam':
         optimizer = optim.AdamW(
             filter(lambda p: p.requires_grad, model.parameters()),
-            lr=cfg['train']['lr'],weight_decay=cfg['train']['wd']
+            lr=1e-3,weight_decay=cfg['train']['wd']
         )
     elif cfg['train']['optimizer'] == 'rmsprop':
         optimizer = optim.RMSprop(
             filter(lambda p: p.requires_grad, model.parameters()),
-            lr=cfg['train']['lr'],
+            lr=1e-3,
             momentum=cfg['train']['momentum'],
             weight_decay=cfg['train']['wd'],
             alpha=cfg['train']['rmsprop_alpha'],

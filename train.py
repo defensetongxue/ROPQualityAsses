@@ -14,7 +14,8 @@ torch.manual_seed(0)
 np.random.seed(0)
 # Parse arguments
 args = get_config()
-
+args.configs["lr_strategy"]["lr"]=args.lr
+args.configs["train"]["wd"]=args.wd
 os.makedirs(args.save_dir,exist_ok=True)
 print("Saveing the model in {}".format(args.save_dir))
 # Create the model and criterion
@@ -105,7 +106,6 @@ for epoch in range(last_epoch,total_epoches):
             print("Early stopping triggered")
             break
 
-
 # Load the best model and evaluate
 metirc=Metrics("Main")
 model.load_state_dict(
@@ -120,7 +120,8 @@ param={
     "split_name":args.split_name,
     "angle_type":args.angle_type,
     "optimizer":args.configs["lr_strategy"],
-    "weight_decay":args.configs["train"]["wd"],
+    "weight_decay":args.wd,
+    "lr":args.lr,
     "save_epoch":saved_epoch
 }
 metirc._store(saved_epoch,param)
