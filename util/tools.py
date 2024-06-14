@@ -1,5 +1,5 @@
 from PIL import Image, ImageOps, ImageDraw, ImageFont
-import os
+import os,json
 import numpy as np
 def visual(image_path, label, score, save_path, font_path='./arial.ttf', font_size=50):
     # 打开图像
@@ -22,3 +22,8 @@ def visual(image_path, label, score, save_path, font_path='./arial.ttf', font_si
     image=image.resize((800,600))
     # 保存图像
     image.save(save_path)
+    
+def get_color(color_name,number,file_path='./Color.json'):
+    with open(file_path) as f:
+        color_list=json.load(f)
+    return color_list[color_name][str(number)]

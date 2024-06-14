@@ -129,5 +129,5 @@ def get_optimizer_vit(cfg,model):
         no_weight_decay_list=model.no_weight_decay(),
         layer_decay=cfg["train"]["layer_decay"]
     )
-    optimizer = torch.optim.AdamW(param_groups, lr=cfg["train"]["lr"])
+    optimizer = torch.optim.AdamW(param_groups, lr=1e-3)
     return optimizer
