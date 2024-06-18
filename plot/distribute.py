@@ -9,10 +9,10 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 sys.path.append(project_root)
 from util.tools import get_color
-
+from configs import get_config
+args=get_config()
 # Set paths
-record_path = './record.json'
-save_dir = './experiments/record_figure'
+save_dir = './experiments/record_figure/distribute'
 font_path = './arial.ttf'
 font_size = 15  # 增大字体大小
 color_list = get_color("xinhai", 5)
@@ -32,7 +32,7 @@ with open(('../autodl-tmp/dataset_ROP/annotations.json')) as f:
     data_dict = json.load(f)
 
 # Count the data
-angle_type = 0
+angle_type = args.angle_type
 data_cnt = [0, 0, 0]
 for image_name in data_dict:
     data = data_dict[image_name]
@@ -62,7 +62,7 @@ ax.pie(
 )
 
 # Save the figure
-plt.savefig(os.path.join(save_dir, 'distribute.png'), bbox_inches='tight', dpi=300)
+plt.savefig(os.path.join(save_dir, f'{str(angle_type)}.png'), bbox_inches='tight', dpi=300)
 
 # Close the figure to free up memory
 plt.close()
@@ -70,3 +70,16 @@ print(data_cnt)
 all_number=data_cnt[0]+data_cnt[1]+data_cnt[2]
 print(data_cnt[0]/all_number,data_cnt[1]/all_number,data_cnt[2]/all_number)
 print((data_cnt[1]+data_cnt[2])/all_number)
+
+if os.path.exists(os.path.join(save_dir, 'record.json')):
+    with open(os.path.join(save_dir, 'record.json')) as f:
+        record=json.load(f)
+else:
+    record={}
+record[str(angle_type)]={
+    "data_number":all_number,
+    "0_1_2_number":data_cnt
+}
+
+with open(os.path.join(save_dir, 'record.json'),'w') as f:
+    json.dump(record,f,indent=4)

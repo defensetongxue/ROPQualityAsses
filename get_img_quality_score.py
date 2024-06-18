@@ -4,9 +4,7 @@ from util.dataset import CustomDataset
 from  models import build_model
 import os,json
 import numpy as np
-from util.metric import Metrics
 from util.functions import to_device
-from util.tools import visual
 from configs import get_config
 # Initialize the folder
 os.makedirs("checkpoints",exist_ok=True)

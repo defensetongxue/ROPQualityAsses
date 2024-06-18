@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from util.dataset import CustomDataset
 from  models import build_model
-import os,json
+import os,json,random
 import numpy as np
 from util.metric import Metrics
 from util.functions import train_epoch,val_epoch,get_optimizer,lr_sche
@@ -10,8 +10,11 @@ from configs import get_config
 # Initialize the folder
 os.makedirs("checkpoints",exist_ok=True)
 os.makedirs("experiments",exist_ok=True)
-torch.manual_seed(0)
+random.seed(0)
 np.random.seed(0)
+torch.manual_seed(0)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(0)
 # Parse arguments
 args = get_config()
 args.configs["lr_strategy"]["lr"]=args.lr
@@ -105,7 +108,8 @@ for epoch in range(last_epoch,total_epoches):
         if early_stop_counter > args.configs['train']['early_stop']:
             print("Early stopping triggered")
             break
-
+os.makedirs(os.path.join('./experiments','record_orignal'),exist_ok=True)
+save_path=os.path.join('./experiments','record_orignal',f"{str(args.angle_type)}.json")
 # Load the best model and evaluate
 metirc=Metrics("Main")
 model.load_state_dict(
@@ -124,4 +128,4 @@ param={
     "lr":args.lr,
     "save_epoch":saved_epoch
 }
-metirc._store(saved_epoch,param)
+metirc._store(saved_epoch,param,save_path)

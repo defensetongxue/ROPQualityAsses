@@ -4,19 +4,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 import sys
-
 # 获取当前文件的目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 sys.path.append(project_root)
 from util.tools import get_color
-
+from configs import get_config
+args=get_config()
+angle_type=str(args.angle_type)
 # Set paths
-record_path = './record.json'
-save_dir = './experiments/record_figure'
+record_path = f'./experiments/record_orignal/{angle_type}.json'
+save_dir = f'./experiments/record_figure/ModelVsModel/{angle_type}'
 font_path = './arial.ttf'
 font_size = 15  # 增大字体大小
-color_list = get_color("xinhai", 5)
+color_list = get_color("ganyu", 5)
 
 # Ensure color values are normalized to [0, 1] for matplotlib
 color_list = np.array(color_list) / 255.0
