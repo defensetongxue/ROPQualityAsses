@@ -8,7 +8,7 @@ import random  # Importing random for random sorting
 args = get_config()
 
 class QualitySortHandler:
-    def __init__(self, data_path, posterior_val=0.5,quality_val=1.0, posterior_length=500, peripheral_angle=90):
+    def __init__(self, data_path, posterior_val=0.3,quality_val=0.1, posterior_length=500, peripheral_angle=90):
         with open(os.path.join(data_path, 'annotations.json')) as f:
             self.data_dict = json.load(f)
         with open(os.path.join(data_path, 'fid_annotations.json')) as f:
@@ -20,7 +20,7 @@ class QualitySortHandler:
         self.posterior_val= posterior_val
 
         self.use_posterior=None
-        self.use_rever=True
+        self.use_rever=False
     # Gather data and split by fid
     def _gather_data(self):
         follow_up_split = {}
@@ -55,6 +55,7 @@ class QualitySortHandler:
 
     # Calculate the relative angle between two angles
     def _cal_related_angle(self, angle1, angle2):
+        print(angle1,angle2)
         if angle1 < angle2:
             a, b = angle1, angle2
         else:
@@ -100,16 +101,13 @@ class QualitySortHandler:
                     quality_scores.append((quality_score, image_name))
                 
                 quality_scores.sort(reverse=True, key=lambda x: x[0])  # Sort based on quality score
+
                 select_image = quality_scores[0][1]
                 sequence.remove(select_image)
                 tar_sequence.append(select_image)
                 if self._is_posterior(select_image):
                     poster.append(select_image)
-                    if self.use_rever:
-                        self.use_posterior=True
                 else:
-                    if self.use_rever:
-                        self.use_posterior=False
                     periph.append(select_image)
             return tar_sequence
         else:
@@ -130,5 +128,12 @@ class QualitySortHandler:
                         success_detect_num_list.append(i)
                         success_detect_rate_list.append(i / len(sorted_sequence))
                         break  # Stop after first successful detection
-        return np.mean(success_detect_num_list), np.mean(success_detect_rate_list)
+        return np.mean(success_detect_num_list), np.mean(success_detect_rate_list),success_detect_num_list,success_detect_rate_list
 
+data_path='../quality_annotation'
+
+hander= QualitySortHandler(data_path)
+res_mean,res_mean_r,l1,l2=hander._get_accelerate(method='score')
+print(max(l1),max(l2))
+
+print(res_mean,res_mean_r)
