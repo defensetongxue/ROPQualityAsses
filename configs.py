@@ -20,7 +20,7 @@ def get_config():
                         help='which split to use.')
     # Model
     # train and test
-    parser.add_argument('--save_dir', type=str, default="../autodl-tmp/ROP_checkpoints",
+    parser.add_argument('--save_dir', type=str, default="../autodl-tmp/ROP_checkpoints/Quality",
                         help='Name of the file to save the best model during training.')
     parser.add_argument('--result_path', type=str, default="experiments",
                         help='Path to the visualize result or the pytorch model will be saved.')
