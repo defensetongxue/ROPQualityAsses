@@ -96,7 +96,8 @@ threshold = 20
 load_annote = False
 
 preder = PredAngleType(data_path, threshold)
-
+preder.test_threshold(60,load_pred=True)
+raise
 thresholds = np.arange(5, 100, 5)
 accuracies = []
 aucs = []

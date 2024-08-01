@@ -6,3 +6,4 @@ ring.py
 tmp.py
 *.json
 pretrained
+tmp

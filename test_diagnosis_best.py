@@ -21,7 +21,7 @@ class QualityScoreNormer:
         return (val - self.min) / (self.max - self.min)
 
 class QualitySortHandler:
-    def __init__(self, data_path, peripheral_val=0.1, quality_val=0.1, posterior_length=500, peripheral_angle=90, detector_threshold=0.5):
+    def __init__(self, data_path, posterior_val=0.3, quality_val=0.1, posterior_length=500, peripheral_angle=90, detector_threshold=0.5):
         with open(os.path.join(data_path, 'annotations.json')) as f:
             self.data_dict = json.load(f)
         with open(os.path.join(data_path, 'fid_annotations.json')) as f:
@@ -30,7 +30,7 @@ class QualitySortHandler:
         self.quality_val = quality_val
         self.posterior_length = posterior_length
         self.peripheral_angle = peripheral_angle
-        self.peripheral_val = peripheral_val
+        self.posterior_val = posterior_val
 
         self.use_posterior = None
         self.use_rever = False
@@ -118,17 +118,17 @@ class QualitySortHandler:
                 for image_name in sequence_copy:
                     quality_score = self.normer.norm(self.data_dict[image_name]['qualityScorePred']) * self.quality_val + \
                                     self._cal_angle_score(image_name, posterior_list=poster, peripheral_list=periph) * (1 - self.quality_val)
-                    
-                    
-                    if not self._is_posterior(image_name):
-                        quality_score += self.peripheral_val
+                    if self._is_posterior(image_name):
+                        quality_score *= self.posterior_val
+                    else:
+                        quality_score *= (1 - self.posterior_val)
                     quality_scores.append((quality_score, image_name))
+
                 quality_scores.sort(reverse=True, key=lambda x: x[0])  # Sort based on quality score
-                # print(quality_scores)
+
                 select_image = quality_scores[0][1]
                 sequence_copy.remove(select_image)
                 tar_sequence.append(select_image)
-                # raise
                 if self._is_posterior(select_image):
                     poster.append(select_image)
                 else:
@@ -136,17 +136,6 @@ class QualitySortHandler:
             return tar_sequence
         else:
             raise ValueError(f"Unexpected sort method: {method}")
-    
-    def calculate_statistics(self,data):
-        mean = np.mean(data)
-        std = np.std(data)
-        median = np.median(data)
-        q1 = np.percentile(data, 25)
-        q3 = np.percentile(data, 75)
-        r1 = len([i for i in data if i <= 1]) / len(data)
-        r2 = len([i for i in data if i <= 2]) / len(data)
-        r3 = len([i for i in data if i <= 3]) / len(data)
-        return mean, std, median, q1, q3, r1, r2, r3
 
     # Calculate the detection acceleration rate
     def _get_accelerate(self, method='random'):
@@ -155,6 +144,7 @@ class QualitySortHandler:
         success_detect_cnt = 0
         fail_detect_cnt = 0
         
+        cnt=10
         for fid in self.fid_annotations:
             success_detect = False
             if self.fid_annotations[fid] > 0:  # positive
@@ -163,7 +153,15 @@ class QualitySortHandler:
                     data = self.data_dict[image_name]
                     if 'ROP_detect' not in data:
                         raise ValueError(f"{image_name} does not have ridge_seg")
-                    if data['stage'] > 0:
+                    # if self.detecor[image_name] and data['stage']>0:
+                    if data['stage']>0:
+                        if i==1:
+                            cnt-=1
+                            if cnt==0:
+                                raise
+                            print(f"{fid} only one recoginize with {str(len(sorted_sequence))}")
+                            for image_name in sorted_sequence:
+                                print(f"{image_name} stage: {self.data_dict[image_name]['stage']}")
                         success_detect_num_list.append(i)
                         success_detect_rate_list.append(i / len(sorted_sequence))
                         success_detect = True
@@ -178,101 +176,106 @@ data_path = '../quality_annotation'
 
 handler = QualitySortHandler(data_path)
 
-base_number_list = []
-base_rate_list = []
-for _ in range(10):
-    base_number, base_rate = handler._get_accelerate(method='random')
-    base_number_list.extend(base_number)
-    base_rate_list.extend(base_rate)
-
-base_number_stats = handler.calculate_statistics(base_number_list)
-base_rate_stats = handler.calculate_statistics(base_rate_list)
-
-# TODO 2 增加r1,r2,r3的打印
-print(f"Base Number - Mean: {base_number_stats[0]:.2f}, Std: {base_number_stats[1]:.2f}, Median: {base_number_stats[2]:.2f}, Q1: {base_number_stats[3]:.2f}, Q3: {base_number_stats[4]:.2f}")
-print(f"Base Rate - Mean: {base_rate_stats[0]:.2f}, Std: {base_rate_stats[1]:.2f}, Median: {base_rate_stats[2]:.2f}, Q1: {base_rate_stats[3]:.2f}, Q3: {base_rate_stats[4]:.2f}")
-print(f"Base Number - r1: {base_number_stats[5]:.2f}, r2: {base_number_stats[6]:.2f}, r3: {base_number_stats[7]:.2f}")
+def calculate_statistics(data):
+    mean = np.mean(data)
+    std = np.std(data)
+    median = np.median(data)
+    q1 = np.percentile(data, 25)
+    q3 = np.percentile(data, 75)
+    return mean, std, median, q1, q3
 
 results = []
-for value in np.arange(0.0, 1.1, 0.1):
-    handler.quality_val = value
-    
-    score_number = []
-    score_rate = []
-    for _ in range(10):
-        score_number_, score_rate_ = handler._get_accelerate(method='score')
-        score_number.extend(score_number_)
-        score_rate.extend(score_rate_)
-    results.append((value, score_number, score_rate))
 
-# 绘制箱型图
-fig, ax = plt.subplots(figsize=(10, 6))
+posterior_vals = np.arange(0.0, 1.1, 0.1)[::-1]
+quality_vals = np.arange(0.0, 1.1, 0.1)[::-1]
+posterior_lengths = np.arange(1, 701, 100)[::-1]
+peripheral_angles = np.arange(1, 141, 10)[::-1]
 
-# 将宽度分为13份
-positions = [(i + 1) / 13 for i in range(len(results))]
-for i, result in enumerate(results):
-    value, _, score_rate = result
-    ax.boxplot(score_rate, positions=[positions[i]], widths=0.05, showfliers=False)
 
-# 绘制 base rate 的箱型图
-ax.boxplot(base_rate_list, positions=[12 / 13], widths=0.05, showfliers=False)
+best_rate_median = {'value': None, 'params': None}
+best_rate_q1 = {'value': None, 'params': None}
+best_rate_q3 = {'value': None, 'params': None}
+best_rate_mean = {'value': None, 'params': None}
 
-ax.set_xlabel('Quality Value')
-ax.set_ylabel('Detection Rate')
-ax.set_title('Detection Rate vs. Quality Value')
+# Initialize best metrics for base_number
+best_number_median = {'value': None, 'params': None}
+best_number_q1 = {'value': None, 'params': None}
+best_number_q3 = {'value': None, 'params': None}
+best_number_mean = {'value': None, 'params': None}
 
-# 设置 x 轴刻度
-ax.set_xticks(positions + [12 / 13])
-xticklabels = [f'{x:.1f}' for x in np.arange(0.0, 1.1, 0.1)] + ['Random']
-ax.set_xticklabels(xticklabels)
-# 设置 x 轴限制
-ax.set_xlim(0, 1)
+for posterior_val in posterior_vals:
+    for quality_val in quality_vals:
+        for posterior_length in posterior_lengths:
+            for peripheral_angle in peripheral_angles:
+                
+                handler.posterior_val = posterior_val
+                handler.quality_val = quality_val
+                handler.posterior_length = posterior_length
+                handler.peripheral_angle = peripheral_angle
+                # handler.posterior_val = 0.0
+                # handler.quality_val = 0.0
+                # handler.posterior_length = posterior_length
+                # handler.peripheral_angle = peripheral_angle
+                base_number, base_rate = handler._get_accelerate(method='score')
+                rate_mean, _, rate_median, rate_q1, rate_q3 = calculate_statistics(base_rate)
+                number_mean, _, number_median, number_q1, number_q3 = calculate_statistics(base_number)
+                
+                results.append({
+                    'posterior_val': posterior_val,
+                    'quality_val': quality_val,
+                    'posterior_length': posterior_length,
+                    'peripheral_angle': peripheral_angle,
+                    'rate_mean': rate_mean,
+                    'rate_median': rate_median,
+                    'rate_q1': rate_q1,
+                    'rate_q3': rate_q3,
+                    'number_mean': number_mean,
+                    'number_median': number_median,
+                    'number_q1': number_q1,
+                    'number_q3': number_q3
+                })
+                
+                if best_rate_median['value'] is None or rate_median < best_rate_median['value']:
+                    best_rate_median['value'] = rate_median
+                    best_rate_median['params'] = (posterior_val, quality_val, posterior_length, peripheral_angle)
+                
+                if best_rate_q1['value'] is None or rate_q1 < best_rate_q1['value']:
+                    best_rate_q1['value'] = rate_q1
+                    best_rate_q1['params'] = (posterior_val, quality_val, posterior_length, peripheral_angle)
+                
+                if best_rate_q3['value'] is None or rate_q3 < best_rate_q3['value']:
+                    best_rate_q3['value'] = rate_q3
+                    best_rate_q3['params'] = (posterior_val, quality_val, posterior_length, peripheral_angle)
+                
+                if best_rate_mean['value'] is None or rate_mean < best_rate_mean['value']:
+                    best_rate_mean['value'] = rate_mean
+                    best_rate_mean['params'] = (posterior_val, quality_val, posterior_length, peripheral_angle)
 
-# 创建保存目录
-save_dir = './experiments/detect_result'
-os.makedirs(save_dir, exist_ok=True)
+                # Evaluate and update best base_number metrics
+                if best_number_median['value'] is None or number_median < best_number_median['value']:
+                    best_number_median['value'] = number_median
+                    best_number_median['params'] = (posterior_val, quality_val, posterior_length, peripheral_angle)
+                
+                if best_number_q1['value'] is None or number_q1 < best_number_q1['value']:
+                    best_number_q1['value'] = number_q1
+                    best_number_q1['params'] = (posterior_val, quality_val, posterior_length, peripheral_angle)
+                
+                if best_number_q3['value'] is None or number_q3 < best_number_q3['value']:
+                    best_number_q3['value'] = number_q3
+                    best_number_q3['params'] = (posterior_val, quality_val, posterior_length, peripheral_angle)
+                
+                if best_number_mean['value'] is None or number_mean < best_number_mean['value']:
+                    best_number_mean['value'] = number_mean
+                    best_number_mean['params'] = (posterior_val, quality_val, posterior_length, peripheral_angle)
 
-plt.savefig(os.path.join(save_dir, 'detection_rate_boxplot.png'), dpi=300)
-plt.close()
+print("对于base_rate:")
+print(f"最优的中位数为: {best_rate_median['value']:.2f}，在参数组: {best_rate_median['params']}")
+print(f"最优的Q1为: {best_rate_q1['value']:.2f}，在参数组: {best_rate_q1['params']}")
+print(f"最优的Q3为: {best_rate_q3['value']:.2f}，在参数组: {best_rate_q3['params']}")
+print(f"最优的平均数为: {best_rate_mean['value']:.2f}，在参数组: {best_rate_mean['params']}")
 
-r1_values = []
-r2_values = []
-r3_values = []
-
-#TODO 2 找到 r1,r2,r3最高的时候对应的value，在后面打印
-for value, score_number, _ in results:
-    stats = handler.calculate_statistics(score_number)
-    r1_values.append(stats[5])
-    r2_values.append(stats[6])
-    r3_values.append(stats[7])
-
-# 添加 base 的 r1, r2, r3 值
-r1_values.append(base_number_stats[5])
-r2_values.append(base_number_stats[6])
-r3_values.append(base_number_stats[7])
-
-# 绘制 r1, r2, r3 变化的折线图
-fig, ax = plt.subplots(figsize=(10, 6))
-x_values = [f'{x:.1f}' for x in np.arange(0.0, 1.1, 0.1)] + ['Random']
-ax.plot(x_values, r1_values, label='r1')
-ax.plot(x_values, r2_values, label='r2')
-ax.plot(x_values, r3_values, label='r3')
-ax.set_xlabel('Quality Value')
-ax.set_ylabel('Rate')
-ax.set_title('Rate vs. Quality Value')
-ax.legend()
-
-# 保存图像
-plt.savefig(os.path.join(save_dir, 'r1_r2_r3.png'), dpi=300)
-plt.close()
-
-# 找到 r1, r2, r3 最高值对应的 value
-max_r1_value = x_values[r1_values.index(max(r1_values))]
-max_r2_value = x_values[r2_values.index(max(r2_values))]
-max_r3_value = x_values[r3_values.index(max(r3_values))]
-
-print(f"Max r1 value: {max_r1_value}")
-print(f"Max r2 value: {max_r2_value}")
-print(f"Max r3 value: {max_r3_value}")
-
-print(f"Results saved in {save_dir}")
+print("对于base_number:")
+print(f"最优的中位数为: {best_number_median['value']:.2f}，在参数组: {best_number_median['params']}")
+print(f"最优的Q1为: {best_number_q1['value']:.2f}，在参数组: {best_number_q1['params']}")
+print(f"最优的Q3为: {best_number_q3['value']:.2f}，在参数组: {best_number_q3['params']}")
+print(f"最优的平均数为: {best_number_mean['value']:.2f}，在参数组: {best_number_mean['params']}")
